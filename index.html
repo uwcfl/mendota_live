@@ -11,58 +11,62 @@
 </head>
 
 <body>
-  <nav class="lake-nav">
-    <a href="index.html" class="active">Lake Mendota</a>
-    <a href="trout.html">Trout Lake</a>
-    <a href="sparkling.html">Sparkling Lake</a>
-  </nav>
-
-  <header id="controls">
-    <div class="header-main">
-      <div class="header-top">
-        <div class="title-row">
-          <img src="assets/CFL-Logo.png" alt="Center for Limnology Logo" class="cfl-logo">
-          <h1>Lake Mendota Buoy Live Data</h1>
-          <span id="loadStatus" class="status"></span>
-        </div>
-        <p class="header-buoy-info">
-          Operated by the UW-Madison's Center for Limnology, David Buoy records water quality measurements every minute
-          on Lake Mendota. Below are real-time data from the middle of the lake. Data are not quality controlled.
-        </p>
+  <div id="dashboard">
+    <aside id="sidebar">
+      <div class="brand">
+        <img src="assets/CFL-Logo.png" alt="Center for Limnology logo" class="cfl-logo">
+        <h1>Lake Mendota<span>Live Buoy Data &mdash; <span id="asOf">&ndash;</span></span></h1>
       </div>
 
-      <div class="range-row">
-        <label>Range:
-          <input type="date" id="startDate">
-          &ndash;
-          <input type="date" id="endDate">
-        </label>
-        <div class="presets">
-          <button data-days="1">1d</button>
-          <button data-days="3">3d</button>
-          <button data-days="7">7d</button>
-          <button data-days="30">30d</button>
-          <button data-days="90">90d</button>
-          <button data-days="all">All</button>
+      <div class="stat-grid">
+        <div class="stat-tile">
+          <div class="stat-label">Surface Temperature</div>
+          <div class="stat-value"><span id="val-surface">&ndash;</span><span class="stat-unit">&deg;C</span></div>
         </div>
-        <span id="binNote" class="bin-note"></span>
+
+        <div class="stat-tile">
+          <div class="stat-label">Bottom Temperature</div>
+          <div class="stat-value"><span id="val-bottom">&ndash;</span><span class="stat-unit">&deg;C</span></div>
+        </div>
+
+        <div class="stat-tile">
+          <div class="stat-label">Wind Speed</div>
+          <div class="stat-value"><span id="val-wind">&ndash;</span><span class="stat-unit">mph</span></div>
+        </div>
+
+        <div class="stat-tile">
+          <div class="stat-label">Wind Direction</div>
+          <div class="stat-value stat-value-sm"><span id="val-winddir">&ndash;</span></div>
+        </div>
+
+        <div class="stat-tile">
+          <div class="stat-label">Air Temperature</div>
+          <div class="stat-value"><span id="val-airtemp">&ndash;</span><span class="stat-unit">&deg;C</span></div>
+        </div>
+
+        <div class="stat-tile">
+          <div class="stat-label">Relative Humidity</div>
+          <div class="stat-value"><span id="val-rh">&ndash;</span><span class="stat-unit">%</span></div>
+        </div>
       </div>
 
-      <div class="varToggles" id="varToggles"></div>
-    </div>
+      <div class="sidebar-footer">
+        <img src="assets/Limnology_buoy_Mendota_2024-10-16JM_1957.jpg" alt="David Buoy" class="buoy-thumb">
+        <div id="loadStatus" class="status"></div>
+      </div>
+    </aside>
 
-    <div class="buoy-logo-wrap" id="buoyWrap">
-      <img src="assets/buoy.png" alt="David Buoy" class="buoy-logo" id="buoyImg">
-    </div>
-  </header>
+    <main id="main">
+      <section class="chart-panel profile-panel">
+        <div class="chart-title-row">
+          <div class="chart-title">Temperature Profile</div>
+          <div class="chart-sub" id="profileAsOf"></div>
+        </div>
+        <div id="profileChart" class="chart-body"></div>
+      </section>
+    </main>
+  </div>
 
-  <main id="charts"></main>
-
-  <footer>
-    <p>Click and drag any plot to change the time range (synced across all plots).</p>
-  </footer>
-
-  <script src="shared.js"></script>
   <script src="mendota.js"></script>
 </body>
 

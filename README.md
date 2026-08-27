@@ -1,24 +1,26 @@
-# Buoy Data Viewer
+# Lake Mendota Buoy Dashboard
 
-A web visualization tool for real-time and historical (current year) buoy data collected by the UW-Madison Center for Limnology (CFL). 
+A fixed, no-scroll live dashboard for real-time buoy data collected by the UW-Madison
+Center for Limnology (CFL) on Lake Mendota. Designed to run unattended on a display
+(e.g. a lab monitor) — it fills the screen and auto-refreshes on its own.
 
-## Supported Lakes
+## Layout
 
-- **Lake Mendota** (`index.html`)
-- **Trout Lake** (`trout.html`)
-- **Sparkling Lake** (`sparkling.html`)
+The screen is split 50/50:
+
+- **Left sidebar** — a 2×3 grid of headline current conditions (surface temperature,
+  bottom temperature, wind speed in mph, wind direction, air temperature, and relative
+  humidity), with a photo of the buoy at the bottom.
+- **Right side** — a live temperature-depth profile: depth on the y-axis, temperature
+  on the x-axis, built from the most recent full sensor reading.
+
+Data refreshes automatically about once a minute; there are no interactive controls.
 
 ## Project Structure
 
 ```
-├── index.html       # Lake Mendota page
-├── trout.html       # Trout Lake page
-├── sparkling.html   # Sparkling Lake page
-├── shared.js        # Shared D3 chart rendering, data binning, and interaction logic
-├── mendota.js       # Lake Mendota configuration and parser
-├── trout.js         # Trout Lake configuration and dual-endpoint parser
-├── sparkling.js     # Sparkling Lake configuration and dual-endpoint parser
-├── style.css        # Stylesheet and responsive layout definitions
-└── assets/          # Logotype and buoy images
+├── index.html   # Dashboard page
+├── mendota.js   # Data fetching/parsing and the D3 profile plot
+├── style.css    # Fixed-viewport dashboard layout and styling
+└── assets/      # Logotype and buoy photos
 ```
-
