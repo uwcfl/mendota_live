@@ -122,6 +122,8 @@ async function loadRange(start, end) {
 
 /* ---------- Value Helpers ---------- */
 
+function cToF(c) { return c * 9 / 5 + 32; }
+
 function getLastValue(records, key) {
   for (let i = records.length - 1; i >= 0; i--) {
     if (records[i][key] != null && !isNaN(records[i][key])) return records[i][key];
@@ -151,9 +153,12 @@ function updateSidebar(records) {
   const rh          = getLastValue(records, 'rhL');
 
   setText('val-surface', surfaceTemp != null ? surfaceTemp.toFixed(1) : '–');
+  setText('val-surface-f', surfaceTemp != null ? cToF(surfaceTemp).toFixed(0) : '–');
   setText('val-bottom', bottomTemp != null ? bottomTemp.toFixed(1) : '–');
+  setText('val-bottom-f', bottomTemp != null ? cToF(bottomTemp).toFixed(0) : '–');
   setText('val-wind', windSpeedMs != null ? (windSpeedMs * 2.23694).toFixed(1) : '–');
   setText('val-airtemp', airTemp != null ? airTemp.toFixed(1) : '–');
+  setText('val-airtemp-f', airTemp != null ? cToF(airTemp).toFixed(0) : '–');
   setText('val-rh', rh != null ? rh.toFixed(0) : '–');
 
   if (windDirDeg != null) {
@@ -219,7 +224,7 @@ function renderProfilePlot(records) {
   svg.append('path').datum(data).attr('class', 'legend-line').attr('stroke', '#14708c').attr('d', line);
   svg.selectAll('.profile-dot').data(data).enter().append('circle')
     .attr('class', 'profile-dot')
-    .attr('cx', d => x(d.temp)).attr('cy', d => y(d.depth)).attr('r', 5.25)
+    .attr('cx', d => x(d.temp)).attr('cy', d => y(d.depth)).attr('r', 7.875)
     .attr('fill', '#0b3d4c');
 
   document.getElementById('profileAsOf').textContent = rec ? `As of ${fmtDate(rec.timestamp)}` : '';
