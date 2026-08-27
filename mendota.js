@@ -143,8 +143,6 @@ function getLatestProfileRecord(records) {
 function setText(id, text) { document.getElementById(id).textContent = text; }
 
 function updateSidebar(records) {
-  const latest = records[records.length - 1];
-
   const surfaceTemp = getLastValue(records, WT_KEYS[0]);
   const bottomTemp  = getLastValue(records, WT_KEYS[WT_KEYS.length - 1]);
   const windSpeedMs = getLastValue(records, 'wsL');
@@ -166,8 +164,6 @@ function updateSidebar(records) {
   } else {
     setText('val-winddir', '–');
   }
-
-  document.getElementById('asOf').textContent = latest ? fmtDate(latest.timestamp) : '–';
 }
 
 /* ---------- Temperature-Depth Profile ---------- */
