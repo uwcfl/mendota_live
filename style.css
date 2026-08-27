@@ -184,10 +184,11 @@ html, body {
   justify-content: space-between;
   gap: 8px;
   flex-shrink: 0;
+  padding: 16px 0;
 }
 
 .chart-title {
-  font-size: 2.04rem;
+  font-size: 3.06rem;
   font-weight: 600;
   color: var(--deep);
 }
