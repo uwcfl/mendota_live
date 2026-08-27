@@ -18,7 +18,7 @@ html, body {
   height: 100%;
   margin: 0;
   overflow: hidden;
-  background: var(--surface);
+  background: var(--panel);
   color: var(--ink);
 }
 
@@ -157,7 +157,7 @@ html, body {
 }
 
 .chart-panel {
-  background: var(--panel);
+  background: var(--surface);
   border: 1px solid var(--line);
   border-radius: 6px;
   padding: 8px 12px 6px;
@@ -229,7 +229,7 @@ svg.chart {
 
 .legend-line {
   fill: none;
-  stroke-width: 2.8;
+  stroke-width: 5;
 }
 
 .profile-dot {
