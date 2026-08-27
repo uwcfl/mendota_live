@@ -157,8 +157,7 @@ function updateSidebar(records) {
   setText('val-rh', rh != null ? rh.toFixed(0) : '–');
 
   if (windDirDeg != null) {
-    const towards = (windDirDeg + 180) % 360;
-    setText('val-winddir', `${towards.toFixed(0)}° ${getCompassDirection(towards)}`);
+    setText('val-winddir', `${windDirDeg.toFixed(0)}° ${getCompassDirection(windDirDeg)}`);
   } else {
     setText('val-winddir', '–');
   }
