@@ -219,7 +219,7 @@ function renderProfilePlot(records) {
   svg.append('path').datum(data).attr('class', 'legend-line').attr('stroke', '#14708c').attr('d', line);
   svg.selectAll('.profile-dot').data(data).enter().append('circle')
     .attr('class', 'profile-dot')
-    .attr('cx', d => x(d.temp)).attr('cy', d => y(d.depth)).attr('r', 3.5)
+    .attr('cx', d => x(d.temp)).attr('cy', d => y(d.depth)).attr('r', 5.25)
     .attr('fill', '#0b3d4c');
 
   document.getElementById('profileAsOf').textContent = rec ? `As of ${fmtDate(rec.timestamp)}` : '';
