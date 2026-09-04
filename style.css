@@ -49,7 +49,7 @@ html, body {
 }
 
 .cfl-logo {
-  height: 136px;
+  height: clamp(54.4px, calc(10.462px + 6.2769vw), 136px);
   width: auto;
   background: #ffffff;
   padding: 4px 6px;
@@ -58,7 +58,7 @@ html, body {
 }
 
 .brand h1 {
-  font-size: 4.08rem;
+  font-size: clamp(1.632rem, calc(0.3138rem + 3.0129vw), 4.08rem);
   font-weight: 600;
   margin: 0;
   line-height: 1.3;
@@ -67,7 +67,7 @@ html, body {
 
 .brand h1 span {
   display: block;
-  font-size: 2.04rem;
+  font-size: clamp(0.816rem, calc(0.1569rem + 1.5065vw), 2.04rem);
   font-weight: 400;
   color: #9fc8d6;
   margin-top: 3px;
@@ -96,7 +96,7 @@ html, body {
 }
 
 .stat-label {
-  font-size: 1.872rem;
+  font-size: clamp(0.749rem, calc(0.144rem + 1.3824vw), 1.872rem);
   text-transform: uppercase;
   letter-spacing: 0.04em;
   color: #9fc8d6;
@@ -105,25 +105,25 @@ html, body {
 }
 
 .stat-value {
-  font-size: 5.28rem;
+  font-size: clamp(2.112rem, calc(0.4062rem + 3.8991vw), 5.28rem);
   font-weight: 700;
   color: #ffffff;
   line-height: 1.1;
 }
 
 .stat-value-sm {
-  font-size: 3.84rem;
+  font-size: clamp(1.536rem, calc(0.2954rem + 2.8357vw), 3.84rem);
 }
 
 .stat-unit {
-  font-size: 2.52rem;
+  font-size: clamp(1.008rem, calc(0.1938rem + 1.8609vw), 2.52rem);
   font-weight: 500;
   color: #cfe8ee;
   margin-left: 6px;
 }
 
 .stat-fahrenheit {
-  font-size: 2.52rem;
+  font-size: clamp(1.008rem, calc(0.1938rem + 1.8609vw), 2.52rem);
   font-weight: 400;
   color: #9fc8d6;
 }
@@ -146,7 +146,7 @@ html, body {
 }
 
 .status {
-  font-size: 1.68rem;
+  font-size: clamp(0.672rem, calc(0.1292rem + 1.2406vw), 1.68rem);
   color: #9fc8d6;
   min-height: 1em;
 }
@@ -189,19 +189,19 @@ html, body {
 }
 
 .chart-title {
-  font-size: 3.06rem;
+  font-size: clamp(1.683rem, calc(0.612rem + 2.448vw), 3.06rem);
   font-weight: 600;
   color: var(--deep);
 }
 
 .chart-sub {
-  font-size: 1.68rem;
+  font-size: clamp(0.924rem, calc(0.336rem + 1.344vw), 1.68rem);
   color: var(--muted);
   white-space: nowrap;
 }
 
 .chart-value {
-  font-size: 1.872rem;
+  font-size: clamp(1.03rem, calc(0.3744rem + 1.4976vw), 1.872rem);
   font-weight: 700;
   color: var(--mid);
   white-space: nowrap;
@@ -226,12 +226,12 @@ svg.chart {
 
 .axis text {
   fill: var(--muted);
-  font-size: 36px;
+  font-size: clamp(19.8px, calc(7.2px + 1.8vw), 36px);
 }
 
 .axis-title {
   fill: var(--deep);
-  font-size: 36px;
+  font-size: clamp(19.8px, calc(7.2px + 1.8vw), 36px);
   font-weight: 600;
 }
 
@@ -243,4 +243,128 @@ svg.chart {
 .profile-dot {
   stroke: #ffffff;
   stroke-width: 0.6;
+}
+
+/* ---------- Mobile (phone) layout ----------
+   Desktop styles above are untouched above this breakpoint; this
+   block only overrides layout/sizing on narrow screens so the
+   dashboard stacks and scrolls instead of trying to fit one 27"
+   frame into a phone viewport. */
+
+@media (max-width: 700px) {
+  html, body {
+    height: auto;
+    overflow: auto;
+  }
+
+  #dashboard {
+    flex-direction: column;
+    height: auto;
+    min-height: 100vh;
+    width: 100%;
+  }
+
+  #sidebar {
+    flex: none;
+    width: 100%;
+    padding: 14px;
+    gap: 10px;
+    overflow: visible;
+  }
+
+  .brand {
+    margin-bottom: 2px;
+  }
+
+  .cfl-logo {
+    height: 40px;
+  }
+
+  .brand h1 {
+    font-size: 1.3rem;
+  }
+
+  .brand h1 span {
+    font-size: 0.75rem;
+  }
+
+  .stat-grid {
+    flex: none;
+    gap: 8px;
+  }
+
+  .stat-tile {
+    padding: 8px 10px;
+  }
+
+  .stat-label {
+    font-size: 0.68rem;
+    margin-top: 2px;
+    margin-bottom: 3px;
+  }
+
+  .stat-value {
+    font-size: 1.7rem;
+  }
+
+  .stat-value-sm {
+    font-size: 1.25rem;
+  }
+
+  .stat-unit {
+    font-size: 0.85rem;
+    margin-left: 4px;
+  }
+
+  .stat-fahrenheit {
+    font-size: 0.85rem;
+  }
+
+  .sidebar-footer {
+    margin-top: 10px;
+  }
+
+  .buoy-thumb {
+    max-height: 18vh;
+  }
+
+  .status {
+    font-size: 0.75rem;
+  }
+
+  #main {
+    flex: none;
+    width: 100%;
+    height: 65vh;
+    padding: 14px;
+  }
+
+  .chart-title-row {
+    padding: 6px 0;
+  }
+
+  .chart-title {
+    font-size: 1.15rem;
+  }
+
+  .chart-sub {
+    font-size: 0.7rem;
+    white-space: normal;
+  }
+
+  .chart-value {
+    font-size: 0.78rem;
+  }
+
+  .axis text {
+    font-size: 11px;
+  }
+
+  .axis-title {
+    font-size: 12px;
+  }
+
+  .legend-line {
+    stroke-width: 2;
+  }
 }
