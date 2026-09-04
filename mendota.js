@@ -175,19 +175,22 @@ function renderProfilePlot(records) {
   const width  = container.clientWidth  || 400;
   const height = container.clientHeight || 300;
 
-  // Scale margins/offsets continuously with the container's actual width
-  // instead of a hard breakpoint, so narrow phone screens (whatever their
-  // exact width) always get proportionally tight axis-label spacing.
-  const scale = Math.max(0, Math.min(1, (width - 320) / (900 - 320)));
+  // Scale margins/offsets with the *viewport* width, using the same
+  // 700-1600 calibration range as the CSS clamp() driving .axis text's
+  // font-size. Using the plot container's own width here (which is only
+  // ~50% of the viewport in the side-by-side desktop/tablet layout) would
+  // drift out of sync with the actual rendered font size at in-between
+  // widths, leaving too little margin and causing overlap.
+  const scale = Math.max(0, Math.min(1, (window.innerWidth - 700) / (1600 - 700)));
   const lerp = (min, max) => min + (max - min) * scale;
   const margin = {
     top:    lerp(10, 20),
     right:  lerp(12, 30),
-    bottom: lerp(34, 90),
-    left:   lerp(42, 100),
+    bottom: lerp(40, 90),
+    left:   lerp(48, 100),
   };
-  const xTitleGap = lerp(4, 15);
-  const yTitleGap  = lerp(10, 28);
+  const xTitleGap = lerp(6, 15);
+  const yTitleGap  = lerp(13, 28);
 
   const svg = d3.select(container).append('svg').attr('class', 'chart')
     .attr('viewBox', `0 0 ${width} ${height}`);
