@@ -183,8 +183,8 @@ function renderProfilePlot(records) {
   const margin = {
     top:    lerp(10, 20),
     right:  lerp(12, 30),
-    bottom: lerp(26, 90),
-    left:   lerp(30, 100),
+    bottom: lerp(34, 90),
+    left:   lerp(42, 100),
   };
   const xTitleGap = lerp(4, 15);
   const yTitleGap  = lerp(10, 28);
