@@ -174,7 +174,10 @@ function renderProfilePlot(records) {
 
   const width  = container.clientWidth  || 400;
   const height = container.clientHeight || 300;
-  const margin = { top: 20, right: 30, bottom: 90, left: 100 };
+  const compact = width < 480;
+  const margin = compact
+    ? { top: 10, right: 12, bottom: 34, left: 38 }
+    : { top: 20, right: 30, bottom: 90, left: 100 };
 
   const svg = d3.select(container).append('svg').attr('class', 'chart')
     .attr('viewBox', `0 0 ${width} ${height}`);
@@ -205,14 +208,14 @@ function renderProfilePlot(records) {
 
   svg.append('text').attr('class', 'axis-title')
     .attr('x', (margin.left + width - margin.right) / 2)
-    .attr('y', height - 15)
+    .attr('y', height - (compact ? 4 : 15))
     .attr('text-anchor', 'middle')
     .text('Temperature (°C)');
 
   svg.append('text').attr('class', 'axis-title')
     .attr('transform', 'rotate(-90)')
     .attr('x', -(margin.top + height - margin.bottom) / 2)
-    .attr('y', 28)
+    .attr('y', compact ? 12 : 28)
     .attr('text-anchor', 'middle')
     .text('Depth (m)');
 
