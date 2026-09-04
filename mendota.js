@@ -174,10 +174,20 @@ function renderProfilePlot(records) {
 
   const width  = container.clientWidth  || 400;
   const height = container.clientHeight || 300;
-  const compact = width < 480;
-  const margin = compact
-    ? { top: 10, right: 12, bottom: 34, left: 38 }
-    : { top: 20, right: 30, bottom: 90, left: 100 };
+
+  // Scale margins/offsets continuously with the container's actual width
+  // instead of a hard breakpoint, so narrow phone screens (whatever their
+  // exact width) always get proportionally tight axis-label spacing.
+  const scale = Math.max(0, Math.min(1, (width - 320) / (900 - 320)));
+  const lerp = (min, max) => min + (max - min) * scale;
+  const margin = {
+    top:    lerp(10, 20),
+    right:  lerp(12, 30),
+    bottom: lerp(26, 90),
+    left:   lerp(30, 100),
+  };
+  const xTitleGap = lerp(4, 15);
+  const yTitleGap  = lerp(10, 28);
 
   const svg = d3.select(container).append('svg').attr('class', 'chart')
     .attr('viewBox', `0 0 ${width} ${height}`);
@@ -208,14 +218,14 @@ function renderProfilePlot(records) {
 
   svg.append('text').attr('class', 'axis-title')
     .attr('x', (margin.left + width - margin.right) / 2)
-    .attr('y', height - (compact ? 4 : 15))
+    .attr('y', height - xTitleGap)
     .attr('text-anchor', 'middle')
     .text('Temperature (°C)');
 
   svg.append('text').attr('class', 'axis-title')
     .attr('transform', 'rotate(-90)')
     .attr('x', -(margin.top + height - margin.bottom) / 2)
-    .attr('y', compact ? 12 : 28)
+    .attr('y', yTitleGap)
     .attr('text-anchor', 'middle')
     .text('Depth (m)');
 
@@ -223,7 +233,7 @@ function renderProfilePlot(records) {
   svg.append('path').datum(data).attr('class', 'legend-line').attr('stroke', '#14708c').attr('d', line);
   svg.selectAll('.profile-dot').data(data).enter().append('circle')
     .attr('class', 'profile-dot')
-    .attr('cx', d => x(d.temp)).attr('cy', d => y(d.depth)).attr('r', 7.875)
+    .attr('cx', d => x(d.temp)).attr('cy', d => y(d.depth)).attr('r', 6)
     .attr('fill', '#0b3d4c');
 
   document.getElementById('profileAsOf').textContent = rec ? `As of ${fmtDate(rec.timestamp)}` : '';
