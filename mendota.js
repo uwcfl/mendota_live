@@ -13,7 +13,7 @@ const MAX_DEPTH = DEPTHS[DEPTHS.length - 1];
 
 const EARLIEST    = new Date(new Date().getFullYear(), 3, 1); // April 1
 const LOOKBACK_DAYS = 2;     // days of buffer to search back for the latest reading
-const REFRESH_MS    = 60000; // how often to pull fresh data
+const REFRESH_MS    = 600000; // how often to pull fresh data
 
 const FILE_PREFIX = 'https://mendota-buoy-proxy.uwcfl.workers.dev/mendota_buoy_limnodata.';
 const COL_INDEX   = {};
