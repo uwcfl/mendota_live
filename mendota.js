@@ -205,8 +205,15 @@ function renderProfilePlot(records) {
   }
 
   const temps = data.map(d => d.temp);
+  // Enforce a minimum 5 °C span so a near-isothermal profile isn't stretched across the full axis.
+  const MIN_WT_RANGE = 5;
+  let tDomain = temps.length ? d3.extent(temps) : [0, 30];
+  if (tDomain[1] - tDomain[0] < MIN_WT_RANGE) {
+    const mid = (tDomain[0] + tDomain[1]) / 2;
+    tDomain = [mid - MIN_WT_RANGE / 2, mid + MIN_WT_RANGE / 2];
+  }
   const x = d3.scaleLinear()
-    .domain(temps.length ? d3.extent(temps) : [0, 30]).nice()
+    .domain(tDomain).nice()
     .range([margin.left, width - margin.right]);
   const y = d3.scaleLinear()
     .domain([0, MAX_DEPTH])
