@@ -24,3 +24,13 @@ Data refreshes automatically about once a minute; there are no interactive contr
 ├── style.css    # Fixed-viewport dashboard layout and styling
 └── assets/      # Logotype and buoy photos
 ```
+
+## No-Data Modals
+
+A modal shades the dashboard when data stops (no buttons — it clears itself once data returns):
+
+- **Buoy offline** — no data for `OFFLINE_HOURS` (12).
+- **Out for the winter** — no data for 7 days between Nov 1 and April 1, or forced with
+  `FORCE_WINTER_MODAL = true` at the top of `mendota.js`.
+
+While a modal is showing, the dashboard displays the last known conditions behind it.

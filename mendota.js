@@ -15,6 +15,12 @@ const EARLIEST    = new Date(new Date().getFullYear(), 3, 1); // April 1
 const LOOKBACK_DAYS = 2;     // days of buffer to search back for the latest reading
 const REFRESH_MS    = 600000; // how often to pull fresh data
 
+// No-data modals
+const FORCE_WINTER_MODAL = false; // set true to always show the 'out for the winter' modal
+const OFFLINE_HOURS = 12;         // hours without data before the 'buoy is offline' modal
+const WINTER_DAYS   = 7;          // days without data (Nov 1 – Apr 1) before the winter modal
+const LAST_READING_SEARCH_DAYS = 200; // how far back to look for the last reading when offline
+
 const FILE_PREFIX = 'https://mendota-buoy-proxy.uwcfl.workers.dev/mendota_buoy_limnodata.';
 const COL_INDEX   = {};
 
@@ -249,6 +255,79 @@ function renderProfilePlot(records) {
   document.getElementById('profileAsOf').textContent = rec ? `As of ${fmtDate(rec.timestamp)}` : '';
 }
 
+/* ---------- Last Reading Search ---------- */
+
+// When the live window is empty, look further back (a week at a time, in
+// parallel) so the display can show the last known conditions behind the modal.
+async function findLastReading() {
+  const d = toChicago(new Date());
+  for (let i = 0; i < LAST_READING_SEARCH_DAYS; i += 7) {
+    const days = [];
+    for (let j = 0; j < 7; j++) {
+      days.push(new Date(d));
+      d.setDate(d.getDate() - 1);
+    }
+    const results = await Promise.all(days.map(loadDay));
+    for (const v of results) {
+      if (v !== 'missing' && v.length) {
+        const recs = v.slice().sort((a, b) => a.timestamp - b.timestamp);
+        return { timestamp: recs[recs.length - 1].timestamp, records: recs };
+      }
+    }
+  }
+  return null;
+}
+
+/* ---------- No-Data Modals ---------- */
+
+const ICON_OFFLINE = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 8.8a15 15 0 0 1 4.2-2.6M9.5 5.2A15 15 0 0 1 22 8.8"/><path d="M5 12.6a10 10 0 0 1 3.4-1.9M13.5 10.3A10 10 0 0 1 19 12.6"/><path d="M8.5 16.4a5 5 0 0 1 7 0"/><circle cx="12" cy="20" r="0.8" fill="currentColor"/><path d="M3 3l18 18"/></svg>';
+const ICON_WINTER = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M12 2v20M4.2 6.5l15.6 9M4.2 17.5l15.6-9"/><path d="M9.5 3.5 12 6l2.5-2.5M9.5 20.5 12 18l2.5 2.5M3.3 10l3.4.9-.9 3.4M20.7 14l-3.4-.9.9-3.4M5.8 9.7l.9 3.4-3.4.9M18.2 14.3l-.9-3.4 3.4-.9"/></svg>';
+
+// Winter: forced, or no data for a week between Nov 1 and the season start.
+// Offline: no data for OFFLINE_HOURS. Winter takes priority.
+function noDataKind(lastReading) {
+  if (FORCE_WINTER_MODAL) return 'winter';
+  const now = toChicago(new Date());
+  const ageMs = lastReading ? now - lastReading : Infinity;
+  const seasonStart = new Date(now.getFullYear(), EARLIEST.getMonth(), EARLIEST.getDate());
+  const offSeason = now.getMonth() >= 10 || now < seasonStart;
+  if (offSeason && ageMs > WINTER_DAYS * 86400000) return 'winter';
+  if (ageMs > OFFLINE_HOURS * 3600000) return 'offline';
+  return null;
+}
+
+// Kiosk display: no close button — the modal hides itself once data returns.
+function updateNoDataModal(lastReading) {
+  let overlay = document.getElementById('nodataOverlay');
+  const kind = noDataKind(lastReading);
+  if (!kind) {
+    if (overlay) overlay.hidden = true;
+    return;
+  }
+  if (!overlay) {
+    overlay = document.createElement('div');
+    overlay.id = 'nodataOverlay';
+    overlay.className = 'nodata-overlay';
+    overlay.setAttribute('role', 'dialog');
+    overlay.setAttribute('aria-labelledby', 'nodataTitle');
+    document.body.appendChild(overlay);
+  }
+  const isWinter = kind === 'winter';
+  overlay.innerHTML = `
+    <div class="nodata-card${isWinter ? ' winter' : ''}">
+      <div class="nodata-icon">${isWinter ? ICON_WINTER : ICON_OFFLINE}</div>
+      <h2 class="nodata-title" id="nodataTitle">${isWinter
+        ? 'The buoy has been taken out for the winter!'
+        : 'It looks like the buoy is offline.'}</h2>
+      <p class="nodata-msg">${isWinter
+        ? 'Data collection will resume in the Spring.'
+        : 'This is usually resolved in a day or two. Please check again later!'}</p>
+      <p class="nodata-meta">${lastReading
+        ? `Last reading: ${d3.timeFormat('%b %-d, %Y, %-I:%M %p')(lastReading)}` : ''}</p>
+    </div>`;
+  overlay.hidden = false;
+}
+
 /* ---------- Main Render ---------- */
 
 let renderToken = 0;
@@ -256,11 +335,22 @@ let renderToken = 0;
 async function render() {
   const token = ++renderToken;
   const [start, end] = state.domain;
-  const records = await loadRange(start, end);
+  let records = await loadRange(start, end);
   if (token !== renderToken) return;
+
+  let lastReading = records.length ? records[records.length - 1].timestamp : null;
+  if (!lastReading) {
+    const found = await findLastReading();
+    if (token !== renderToken) return;
+    if (found) {
+      lastReading = found.timestamp;
+      records = found.records; // show last known conditions behind the modal
+    }
+  }
 
   updateSidebar(records);
   renderProfilePlot(records);
+  updateNoDataModal(lastReading);
 }
 
 /* ---------- Live Refresh ---------- */
@@ -268,6 +358,8 @@ async function render() {
 function refreshLive() {
   const now = toChicago(new Date());
   state.cache.delete(dateStr(now));
+  // Re-check yesterday too, in case its file was missing/partial at the last refresh
+  state.cache.delete(dateStr(new Date(now.getTime() - 86400000)));
   let start = new Date(now.getTime() - LOOKBACK_DAYS * 86400000);
   if (start < EARLIEST) start = new Date(EARLIEST);
   state.domain = [start, now];
