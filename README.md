@@ -30,7 +30,9 @@ Data refreshes automatically about once a minute; there are no interactive contr
 A modal shades the dashboard when data stops (no buttons — it clears itself once data returns):
 
 - **Buoy offline** — no data for `OFFLINE_HOURS` (12).
-- **Out for the winter** — no data for 7 days between Nov 1 and April 1, or forced with
+- **Out for the winter** — no data in any variable for 24 hours between Nov 1 and April 1, or forced with
   `FORCE_WINTER_MODAL = true` at the top of `mendota.js`.
 
-While a modal is showing, the dashboard displays the last known conditions behind it.
+A sensor silent for 6+ hours shows "–" in the sidebar, and the profile plot is replaced with
+"No data in the last 12 hours" after 12 hours without a profile. The profile's temperature axis is
+7–27 °C, widened to fit any readings outside it.

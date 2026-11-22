@@ -11,6 +11,14 @@ const DEPTHS  = [0, 0.5, 1, 1.5, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15,
 const WT_KEYS = DEPTHS.map((_, i) => `wt${i + 1}`);
 const MAX_DEPTH = DEPTHS[DEPTHS.length - 1];
 
+// Default temperature axis (°C) for the profile, based on the lake's typical annual
+// range (~5th–99th percentile, 2025–26), so the plot is comparable through the year.
+// Readings outside it widen the axis.
+const WATER_TEMP_RANGE = [7, 27];
+
+const STALE_SENSOR_HOURS = 6;  // a sensor silent this long shows "–" in the sidebar
+const PROFILE_MAX_AGE_HOURS = 12; // hide the profile plot if no profile this recent
+
 const EARLIEST    = new Date(new Date().getFullYear(), 3, 1); // April 1
 const LOOKBACK_DAYS = 2;     // days of buffer to search back for the latest reading
 const REFRESH_MS    = 600000; // how often to pull fresh data
@@ -18,7 +26,7 @@ const REFRESH_MS    = 600000; // how often to pull fresh data
 // No-data modals
 const FORCE_WINTER_MODAL = false; // set true to always show the 'out for the winter' modal
 const OFFLINE_HOURS = 12;         // hours without data before the 'buoy is offline' modal
-const WINTER_DAYS   = 7;          // days without data (Nov 1 – Apr 1) before the winter modal
+const WINTER_HOURS  = 24;         // hours without data (Nov 1 – Apr 1) before the winter modal
 const LAST_READING_SEARCH_DAYS = 200; // how far back to look for the last reading when offline
 
 const FILE_PREFIX = 'https://mendota-buoy-proxy.uwcfl.workers.dev/mendota_buoy_limnodata.';
@@ -130,15 +138,22 @@ async function loadRange(start, end) {
 
 function cToF(c) { return c * 9 / 5 + 32; }
 
+function hoursAgo(h) {
+  return new Date(toChicago(new Date()).getTime() - h * 3600000);
+}
+
+// Latest value for `key`, or null if the sensor hasn't reported in STALE_SENSOR_HOURS
 function getLastValue(records, key) {
-  for (let i = records.length - 1; i >= 0; i--) {
+  const cutoff = hoursAgo(STALE_SENSOR_HOURS);
+  for (let i = records.length - 1; i >= 0 && records[i].timestamp >= cutoff; i--) {
     if (records[i][key] != null && !isNaN(records[i][key])) return records[i][key];
   }
   return null;
 }
 
 function getLatestProfileRecord(records) {
-  for (let i = records.length - 1; i >= 0; i--) {
+  const cutoff = hoursAgo(PROFILE_MAX_AGE_HOURS);
+  for (let i = records.length - 1; i >= 0 && records[i].timestamp >= cutoff; i--) {
     if (WT_KEYS.some(k => records[i][k] != null)) return records[i];
   }
   return null;
@@ -198,28 +213,28 @@ function renderProfilePlot(records) {
   const xTitleGap = lerp(6, 15);
   const yTitleGap  = lerp(13, 28);
 
+  const rec  = getLatestProfileRecord(records);
+  if (!rec) {
+    container.innerHTML = `<div class="chart-empty">No data in the last ${PROFILE_MAX_AGE_HOURS} hours</div>`;
+    document.getElementById('profileAsOf').textContent = '';
+    return;
+  }
+
   const svg = d3.select(container).append('svg').attr('class', 'chart')
     .attr('viewBox', `0 0 ${width} ${height}`);
 
-  const rec  = getLatestProfileRecord(records);
   const data = [];
-  if (rec) {
-    DEPTHS.forEach((depth, i) => {
-      const v = rec[WT_KEYS[i]];
-      if (v != null) data.push({ depth, temp: v });
-    });
-  }
-
+  DEPTHS.forEach((depth, i) => {
+    const v = rec[WT_KEYS[i]];
+    if (v != null) data.push({ depth, temp: v });
+  });
   const temps = data.map(d => d.temp);
-  // Enforce a minimum 5 °C span so a near-isothermal profile isn't stretched across the full axis.
-  const MIN_WT_RANGE = 5;
-  let tDomain = temps.length ? d3.extent(temps) : [0, 30];
-  if (tDomain[1] - tDomain[0] < MIN_WT_RANGE) {
-    const mid = (tDomain[0] + tDomain[1]) / 2;
-    tDomain = [mid - MIN_WT_RANGE / 2, mid + MIN_WT_RANGE / 2];
-  }
+
   const x = d3.scaleLinear()
-    .domain(tDomain).nice()
+    .domain([
+      Math.min(WATER_TEMP_RANGE[0], ...temps),
+      Math.max(WATER_TEMP_RANGE[1], ...temps),
+    ]).nice()
     .range([margin.left, width - margin.right]);
   const y = d3.scaleLinear()
     .domain([0, MAX_DEPTH])
@@ -269,10 +284,21 @@ async function findLastReading() {
     }
     const results = await Promise.all(days.map(loadDay));
     for (const v of results) {
-      if (v !== 'missing' && v.length) {
-        const recs = v.slice().sort((a, b) => a.timestamp - b.timestamp);
-        return { timestamp: recs[recs.length - 1].timestamp, records: recs };
-      }
+      if (v === 'missing' || !v.length) continue;
+      const recs = v.slice().sort((a, b) => a.timestamp - b.timestamp);
+      const ts = lastValidTimestamp(recs);
+      if (ts) return { timestamp: ts, records: recs };
+    }
+  }
+  return null;
+}
+
+// Newest timestamp with a valid reading in any variable (records sorted ascending)
+function lastValidTimestamp(records) {
+  for (let i = records.length - 1; i >= 0; i--) {
+    const r = records[i];
+    for (const k in r) {
+      if (k !== 'timestamp' && r[k] != null && !isNaN(r[k])) return r.timestamp;
     }
   }
   return null;
@@ -283,7 +309,7 @@ async function findLastReading() {
 const ICON_OFFLINE = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 8.8a15 15 0 0 1 4.2-2.6M9.5 5.2A15 15 0 0 1 22 8.8"/><path d="M5 12.6a10 10 0 0 1 3.4-1.9M13.5 10.3A10 10 0 0 1 19 12.6"/><path d="M8.5 16.4a5 5 0 0 1 7 0"/><circle cx="12" cy="20" r="0.8" fill="currentColor"/><path d="M3 3l18 18"/></svg>';
 const ICON_WINTER = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M12 2v20M4.2 6.5l15.6 9M4.2 17.5l15.6-9"/><path d="M9.5 3.5 12 6l2.5-2.5M9.5 20.5 12 18l2.5 2.5M3.3 10l3.4.9-.9 3.4M20.7 14l-3.4-.9.9-3.4M5.8 9.7l.9 3.4-3.4.9M18.2 14.3l-.9-3.4 3.4-.9"/></svg>';
 
-// Winter: forced, or no data for a week between Nov 1 and the season start.
+// Winter: forced, or no data (in any variable) for WINTER_HOURS between Nov 1 and the season start.
 // Offline: no data for OFFLINE_HOURS. Winter takes priority.
 function noDataKind(lastReading) {
   if (FORCE_WINTER_MODAL) return 'winter';
@@ -291,7 +317,7 @@ function noDataKind(lastReading) {
   const ageMs = lastReading ? now - lastReading : Infinity;
   const seasonStart = new Date(now.getFullYear(), EARLIEST.getMonth(), EARLIEST.getDate());
   const offSeason = now.getMonth() >= 10 || now < seasonStart;
-  if (offSeason && ageMs > WINTER_DAYS * 86400000) return 'winter';
+  if (offSeason && ageMs > WINTER_HOURS * 3600000) return 'winter';
   if (ageMs > OFFLINE_HOURS * 3600000) return 'offline';
   return null;
 }
@@ -335,17 +361,14 @@ let renderToken = 0;
 async function render() {
   const token = ++renderToken;
   const [start, end] = state.domain;
-  let records = await loadRange(start, end);
+  const records = await loadRange(start, end);
   if (token !== renderToken) return;
 
-  let lastReading = records.length ? records[records.length - 1].timestamp : null;
+  let lastReading = lastValidTimestamp(records);
   if (!lastReading) {
     const found = await findLastReading();
     if (token !== renderToken) return;
-    if (found) {
-      lastReading = found.timestamp;
-      records = found.records; // show last known conditions behind the modal
-    }
+    if (found) lastReading = found.timestamp;
   }
 
   updateSidebar(records);

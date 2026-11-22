@@ -446,3 +446,13 @@ svg.chart {
 .nodata-meta:empty {
   display: none;
 }
+
+/* Shown in place of the profile plot when there's no recent data */
+.chart-empty {
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--muted);
+  font-size: clamp(1rem, 1.4vw, 1.6rem);
+}
