@@ -131,7 +131,44 @@ async function loadRange(start, end) {
     if (v && v !== 'missing') recs = recs.concat(v);
   }
   recs.sort((a, b) => a.timestamp - b.timestamp);
-  return recs;
+  return maskFlatlines(recs);
+}
+
+/* ---------- Flatline Masking ----------
+ * When a sensor stops, the logger can keep writing its last value. Treat a
+ * non-zero value repeated unchanged for FLATLINE_HOURS or more as missing
+ * (keeping the first reading of the run). Profile thermistors are exempt: at
+ * their resolution they legitimately hold one value for 10+ hours.
+ */
+const FLATLINE_HOURS = 3;
+const FLATLINE_EXEMPT = new Set(WT_KEYS);
+
+function maskFlatlines(records) {
+  if (records.length < 2) return records;
+  const minMs = FLATLINE_HOURS * 3600000;
+  const out = records.slice();
+  const copied = new Set();
+  const keys = new Set();
+  for (const r of records) for (const k in r) if (k !== 'timestamp' && !FLATLINE_EXEMPT.has(k)) keys.add(k);
+
+  for (const k of keys) {
+    let runStart = 0;
+    for (let i = 1; i <= out.length; i++) {
+      const same = i < out.length && out[i][k] != null && out[i][k] === out[runStart][k];
+      if (same) continue;
+      const v = out[runStart][k];
+      const endIdx = i - 1;
+      if (v != null && v !== 0 && endIdx > runStart &&
+          out[endIdx].timestamp - out[runStart].timestamp >= minMs) {
+        for (let j = runStart + 1; j <= endIdx; j++) {
+          if (!copied.has(j)) { out[j] = { ...out[j] }; copied.add(j); }
+          out[j][k] = null;
+        }
+      }
+      runStart = i;
+    }
+  }
+  return out;
 }
 
 /* ---------- Value Helpers ---------- */
