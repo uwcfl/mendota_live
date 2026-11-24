@@ -135,13 +135,15 @@ async function loadRange(start, end) {
 }
 
 /* ---------- Flatline Masking ----------
- * When a sensor stops, the logger can keep writing its last value. Treat a
- * non-zero value repeated unchanged for FLATLINE_HOURS or more as missing
- * (keeping the first reading of the run). Profile thermistors are exempt: at
- * their resolution they legitimately hold one value for 10+ hours.
+ * When a sensor stops, the logger can keep writing its last value. Treat any
+ * value (including 0) repeated unchanged for FLATLINE_HOURS or more as missing
+ * (keeping the first reading of the run); zeros are kept for PAR (0 all night).
+ * Profile thermistors are exempt: at their resolution they legitimately hold
+ * one value for 10+ hours.
  */
 const FLATLINE_HOURS = 3;
 const FLATLINE_EXEMPT = new Set(WT_KEYS);
+const FLATLINE_ZERO_OK = new Set(['PAR_above_Avg', 'PAR_below_Avg']); // PAR reads 0 all night
 
 function maskFlatlines(records) {
   if (records.length < 2) return records;
@@ -158,7 +160,7 @@ function maskFlatlines(records) {
       if (same) continue;
       const v = out[runStart][k];
       const endIdx = i - 1;
-      if (v != null && v !== 0 && endIdx > runStart &&
+      if (v != null && !(v === 0 && FLATLINE_ZERO_OK.has(k)) && endIdx > runStart &&
           out[endIdx].timestamp - out[runStart].timestamp >= minMs) {
         for (let j = runStart + 1; j <= endIdx; j++) {
           if (!copied.has(j)) { out[j] = { ...out[j] }; copied.add(j); }
