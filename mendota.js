@@ -346,7 +346,6 @@ function lastValidTimestamp(records) {
 /* ---------- No-Data Modals ---------- */
 
 const ICON_OFFLINE = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 8.8a15 15 0 0 1 4.2-2.6M9.5 5.2A15 15 0 0 1 22 8.8"/><path d="M5 12.6a10 10 0 0 1 3.4-1.9M13.5 10.3A10 10 0 0 1 19 12.6"/><path d="M8.5 16.4a5 5 0 0 1 7 0"/><circle cx="12" cy="20" r="0.8" fill="currentColor"/><path d="M3 3l18 18"/></svg>';
-const ICON_WINTER = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M12 2v20M4.2 6.5l15.6 9M4.2 17.5l15.6-9"/><path d="M9.5 3.5 12 6l2.5-2.5M9.5 20.5 12 18l2.5 2.5M3.3 10l3.4.9-.9 3.4M20.7 14l-3.4-.9.9-3.4M5.8 9.7l.9 3.4-3.4.9M18.2 14.3l-.9-3.4 3.4-.9"/></svg>';
 
 // Winter: forced, or no data (in any variable) for WINTER_HOURS between Nov 1 and the season start.
 // Offline: no data for OFFLINE_HOURS. Winter takes priority.
@@ -362,11 +361,59 @@ function noDataKind(lastReading) {
 }
 
 // Kiosk display: no close button — the modal hides itself once data returns.
+// Winter modal: sleeping-buoy image instead of an icon + title. Clicking the
+// modal (not the backdrop) swaps it for a random winter meme; each further click shows another.
+// After MEME_IDLE_MS without a click it returns to the regular modal.
+const WINTER_IMAGE = 'assets/sleeping_buoy_circle.png';
+const WINTER_MEMES = [
+  'Ghostbusters OG.png',
+  'Hakuna Madata.png',
+  'Oregon Trail.png',
+  'SpongeGeorge sleep mask.png',
+  'Terminator.png',
+].map(f => `assets/${encodeURIComponent(f)}`);
+const MEME_IDLE_MS = 60000;
+
+const modalState = { kind: null, lastReading: null, meme: -1, idleTimer: null };
+
+function renderModalCard(overlay) {
+  const { kind, lastReading } = modalState;
+  const isWinter = kind === 'winter';
+  modalState.meme = -1;
+  overlay.classList.toggle('clickable', isWinter);
+  overlay.setAttribute('aria-label', isWinter
+    ? 'The buoy has been taken out for the winter' : 'It looks like the buoy is offline');
+  overlay.innerHTML = `
+    <div class="nodata-card${isWinter ? ' winter' : ''}">
+      ${isWinter
+        ? `<img class="nodata-winter-img" src="${WINTER_IMAGE}" alt="Sleeping buoy: Shhhh... I'm sleeping for the winter">`
+        : `<div class="nodata-icon">${ICON_OFFLINE}</div>
+           <h2 class="nodata-title">It looks like the buoy is offline.</h2>`}
+      <p class="nodata-msg">${isWinter
+        ? 'Data collection will resume in the Spring.'
+        : 'This is usually resolved in a day or two. Please check again later!'}</p>
+      <p class="nodata-meta">${lastReading
+        ? `Last reading: ${d3.timeFormat('%b %-d, %Y, %-I:%M %p')(lastReading)}` : ''}</p>
+    </div>`;
+}
+
+function showRandomMeme(overlay) {
+  let i;
+  do { i = Math.floor(Math.random() * WINTER_MEMES.length); }
+  while (WINTER_MEMES.length > 1 && i === modalState.meme);
+  modalState.meme = i;
+  overlay.innerHTML = `<img class="nodata-meme" src="${WINTER_MEMES[i]}" alt="Winter message: the buoy is out until spring">`;
+
+  clearTimeout(modalState.idleTimer);
+  modalState.idleTimer = setTimeout(() => renderModalCard(overlay), MEME_IDLE_MS);
+}
+
 function updateNoDataModal(lastReading) {
   let overlay = document.getElementById('nodataOverlay');
   const kind = noDataKind(lastReading);
   if (!kind) {
     if (overlay) overlay.hidden = true;
+    clearTimeout(modalState.idleTimer);
     return;
   }
   if (!overlay) {
@@ -374,22 +421,21 @@ function updateNoDataModal(lastReading) {
     overlay.id = 'nodataOverlay';
     overlay.className = 'nodata-overlay';
     overlay.setAttribute('role', 'dialog');
-    overlay.setAttribute('aria-labelledby', 'nodataTitle');
+    // Only clicks on the modal itself (not the shaded backdrop) show a meme
+    overlay.addEventListener('click', (e) => {
+      if (modalState.kind === 'winter' && e.target.closest('.nodata-card, .nodata-meme')) {
+        showRandomMeme(overlay);
+      }
+    });
     document.body.appendChild(overlay);
+    // Preload the memes so clicks swap instantly
+    WINTER_MEMES.forEach(src => { new Image().src = src; });
   }
-  const isWinter = kind === 'winter';
-  overlay.innerHTML = `
-    <div class="nodata-card${isWinter ? ' winter' : ''}">
-      <div class="nodata-icon">${isWinter ? ICON_WINTER : ICON_OFFLINE}</div>
-      <h2 class="nodata-title" id="nodataTitle">${isWinter
-        ? 'The buoy has been taken out for the winter!'
-        : 'It looks like the buoy is offline.'}</h2>
-      <p class="nodata-msg">${isWinter
-        ? 'Data collection will resume in the Spring.'
-        : 'This is usually resolved in a day or two. Please check again later!'}</p>
-      <p class="nodata-meta">${lastReading
-        ? `Last reading: ${d3.timeFormat('%b %-d, %Y, %-I:%M %p')(lastReading)}` : ''}</p>
-    </div>`;
+  const changed = kind !== modalState.kind;
+  modalState.kind = kind;
+  modalState.lastReading = lastReading;
+  // Don't interrupt a meme someone is looking at on a routine refresh
+  if (changed || modalState.meme < 0) renderModalCard(overlay);
   overlay.hidden = false;
 }
 

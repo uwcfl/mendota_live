@@ -456,3 +456,25 @@ svg.chart {
   color: var(--muted);
   font-size: clamp(1rem, 1.4vw, 1.6rem);
 }
+
+/* Winter modal: sleeping-buoy image, and memes shown on click */
+.nodata-overlay.clickable .nodata-card,
+.nodata-overlay.clickable .nodata-meme {
+  cursor: pointer;
+}
+
+.nodata-winter-img {
+  display: block;
+  width: clamp(160px, 20vw, 300px);
+  aspect-ratio: 1;
+  margin: 0 auto 18px;
+  border-radius: 50%;
+}
+
+.nodata-meme {
+  display: block;
+  width: min(80vh, 90vw, 720px);
+  aspect-ratio: 1;
+  border-radius: 12px;
+  box-shadow: 0 18px 50px rgba(7, 41, 51, 0.45);
+}
