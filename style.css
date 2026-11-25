@@ -437,6 +437,10 @@ svg.chart {
   line-height: 1.45;
 }
 
+.nodata-card.winter .nodata-msg {
+  color: var(--deep);
+}
+
 .nodata-meta {
   margin: 16px 0 0;
   font-size: clamp(0.82rem, 1vw, 1.15rem);
